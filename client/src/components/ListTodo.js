@@ -22,7 +22,7 @@ const ListTodos = () => {
         try {
             const response = await fetch(`${API_URL}/todos`);
             const jsonData = await response.json();
-
+            
             setTodos(jsonData); 
         } catch (error) {
             
@@ -30,7 +30,7 @@ const ListTodos = () => {
     }
     useEffect(()=>{
         getTodos();
-    },[])
+    },[]);
 
    
 

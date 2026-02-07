@@ -10,7 +10,7 @@ const InputTodo = () => {
         try {
             
             const body = {description};
-            const response =await fetch(`${API_URL}/todos`,
+            const response = await fetch(`${API_URL}/todos`,
                 {method:"POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(body)
