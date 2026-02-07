@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import{ API_URL } from "../api.js";
 
 const EditTodo = ({todo}) => {
     const [description, setDescription] = useState(todo.description);
@@ -9,7 +10,7 @@ const EditTodo = ({todo}) => {
         e.preventDefault();
         try {
             const body = { description };
-            const response = await fetch(`http://localhost:5000/todos/${todo.todo_id}`,{
+            const response = await fetch(`${API_URL}/todos/${todo.todo_id}`,{
                 method:"PUT",
                 headers: {"Content-type": "application/json"},
                 body: JSON.stringify(body)

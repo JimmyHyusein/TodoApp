@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import{ API_URL } from "../api.js";
 
 const InputTodo = () => {
 
@@ -9,7 +10,7 @@ const InputTodo = () => {
         try {
             
             const body = {description};
-            const response =await fetch("http://localhost:5000/todos",
+            const response =await fetch(`${API_URL}/todos`,
                 {method:"POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(body)

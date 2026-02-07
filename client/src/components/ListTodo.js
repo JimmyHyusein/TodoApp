@@ -1,5 +1,7 @@
 import React, {useState, useEffect} from "react";
 import EditTodo from "./EditTodo";
+import{ API_URL } from "../api.js";
+
 const ListTodos = () => {
 
     const [todos,setTodos] = useState([]);
@@ -8,7 +10,7 @@ const ListTodos = () => {
 
     const deleteTodo = async id => {
         try {
-           const deleteTodo = await fetch(`http://localhost:5000/todos/${id}`,{
+           const deleteTodo = await fetch(`${API_URL}/todos/${id}`,{
             method:"DELETE"
            });
         setTodos(todos.filter(todo => todo.todo_id !== id));
@@ -18,7 +20,7 @@ const ListTodos = () => {
     }
     const getTodos = async () =>{
         try {
-            const response = await fetch("http://localhost:5000/todos");
+            const response = await fetch(`${API_URL}/todos`);
             const jsonData = await response.json();
 
             setTodos(jsonData); 
