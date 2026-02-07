@@ -1,11 +1,13 @@
-const Pool = require("pg").Pool;
+import Pool from "pg";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const pool = new Pool({
-  user: "postgres",
-    password: "admin",
-    host: "localhost",
-    port: 5432,
-    database: "perntodo"
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production" ? {rejectUnauthorized: false}: false,
+  
 });
 
-module.exports = pool; 
+export default pool;
