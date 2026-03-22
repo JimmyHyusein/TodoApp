@@ -8,12 +8,15 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
+  
+variables:
+  - group: MyVariables
 
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+    versionSpec: $(NODE_VERSION)
+  displayName: Install Node.js
 
 
 - script: npm install
@@ -23,3 +26,6 @@ steps:
 - script: npm run build
   workingDirectory: client
   displayName: Build client
+
+- script: echo $(NODE_VERSION)
+  displayName: Show Node version
