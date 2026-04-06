@@ -7,25 +7,25 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
-  
+  vmImage: 'ubuntu-latest'
+
 variables:
   - group: MyVariables
+
+  - name: NODE_VERSION
+    value: '22.x' 
 
 steps:
 - task: NodeTool@0
   inputs:
     versionSpec: $(NODE_VERSION)
-  displayName: Install Node.js
+  displayName: 'Install Node.js $(NODE_VERSION)'
 
-
-- script: npm install
+- script: |
+    npm install
+    npm run build
   workingDirectory: client
-  displayName: Install client
+  displayName: 'Install and Build client'
 
-- script: npm run build
-  workingDirectory: client
-  displayName: Build client
-
-- script: echo $(NODE_VERSION)
-  displayName: Show Node version
+- script: node --version
+  displayName: 'Verify Node version'
