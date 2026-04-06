@@ -29,3 +29,17 @@ steps:
 
 - script: node --version
   displayName: 'Verify Node version'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'client/build'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Copy Files to Staging'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish Artifact'
