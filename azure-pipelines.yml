@@ -2,7 +2,6 @@
 # Build a Node.js project that uses React.
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
 - main
 
@@ -11,7 +10,6 @@ pool:
 
 variables:
   - group: MyVariables
-
   - name: NODE_VERSION
     value: '22.x' 
 
@@ -22,13 +20,39 @@ steps:
   displayName: 'Install Node.js $(NODE_VERSION)'
 
 - script: |
+    cd server
     npm install
-    npm run build
-  workingDirectory: client
-  displayName: 'Install and Build client'
+    npm test
+  displayName: 'Functional Tests: Server'
 
-- script: node --version
-  displayName: 'Verify Node version'
+
+- script: |
+    cd client
+    npm install
+    npm test
+  displayName: 'Functional Tests: Client'
+
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/test-results/*.xml' 
+  displayName: 'Publish Functional Test Results'
+
+
+- script: |
+    cd server
+    npm audit --audit-level=high
+  displayName: 'Non-functional: Security Scan (Server)'
+  continueOnError: true 
+
+
+- script: |
+    cd client
+    npm run build
+  displayName: 'Build client'
+
 
 - task: CopyFiles@2
   inputs:
