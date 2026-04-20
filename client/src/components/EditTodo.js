@@ -10,7 +10,7 @@ const EditTodo = ({todo}) => {
         e.preventDefault();
         try {
             const body = { description };
-            const response = await fetch(`${API_URL}/todos/${todo.todo_id}`,{
+            const response = await fetch(`${API_URL}/todos/${encodeURIComponent(todo.todo_id)}`,{
                 method:"PUT",
                 headers: {"Content-type": "application/json"},
                 body: JSON.stringify(body)
