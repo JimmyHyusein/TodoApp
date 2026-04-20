@@ -30,7 +30,7 @@ steps:
     organization: $(SONAR_ORG)
     scannerMode: 'CLI'
     configMode: 'manual'
-    projectKey: $(SONAR_PROJECT)
+    cliProjectKey: $(SONAR_PROJECT)
     extraProperties: |
       sonar.javascript.lcov.reportPaths=**/coverage/lcov.info
       sonar.sources=.
