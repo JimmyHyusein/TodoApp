@@ -11,13 +11,30 @@ pool:
 variables:
   - group: MyVariables
   - name: NODE_VERSION
-    value: '22.x' 
+    value: '22.x'
+  - name: SONAR_ORG
+    value: 'jimmyhyusein' 
+  - name: SONAR_PROJECT
+    value: 'JimmyHyusein_TodoApp' 
 
 steps:
-- task: NodeTool@0
+- task: UseNode@1
+  displayName: 'Install Node.js'
   inputs:
-    versionSpec: $(NODE_VERSION)
-  displayName: 'Install Node.js $(NODE_VERSION)'
+    version: $(NODE_VERSION)
+
+- task: SonarCloudPrepare@3
+  displayName: 'Prepare SonarCloud Analysis'
+  inputs:
+    SonarCloud: 'SonarCloudConnection'
+    organization: $(SONAR_ORG)
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: $(SONAR_PROJECT)
+    extraProperties: |
+      sonar.javascript.lcov.reportPaths=**/coverage/lcov.info
+      sonar.sources=.
+      sonar.exclusions=**/node_modules/**,**/*.test.js
 
 - script: |
     cd server
@@ -25,45 +42,62 @@ steps:
     npm test
   displayName: 'Functional Tests: Server'
 
-
 - script: |
     cd client
     npm install
     npm test
   displayName: 'Functional Tests: Client'
-
+  env:
+    CI: true
 
 - task: PublishTestResults@2
+  displayName: 'Publish Test Results'
   condition: succeededOrFailed()
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml' 
-  displayName: 'Publish Functional Test Results'
+    testResultsFiles: '**/test-results/*.xml'
 
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud Analysis'
+
+- task: SonarCloudPublish@3
+  displayName: 'Publish Quality Gate Result'
+  inputs:
+    pollingTimeoutSec: '300'
 
 - script: |
     cd server
     npm audit --audit-level=high
-  displayName: 'Non-functional: Security Scan (Server)'
+  displayName: 'Security Scan (Server)'
   continueOnError: true 
-
 
 - script: |
     cd client
     npm run build
-  displayName: 'Build client'
-
+  displayName: 'Build Client'
 
 - task: CopyFiles@2
+  displayName: 'Copy Build to Staging'
   inputs:
     SourceFolder: 'client/build'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  displayName: 'Copy Files to Staging'
 
 - task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
-  displayName: 'Publish Artifact'
+
+- task: Docker@2
+  displayName: 'Build and Push Docker Image'
+  condition: succeeded()
+  inputs:
+    containerRegistry: 'MyDockerHub'  
+    repository: 'nhyusein/todo-app'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
