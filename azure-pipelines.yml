@@ -13,35 +13,39 @@ variables:
   - name: NODE_VERSION
     value: '22.x'
   - name: SONAR_ORG
-    value: 'твоят-org-key'
+    value: 'jimmyhyusein' # ЗАМЕНИ С ТВОЯ ORG KEY
   - name: SONAR_PROJECT
-    value: 'твоят-project-key'
+    value: 'JimmyHyusein_TodoApp' # ЗАМЕНИ С ТВОЯ PROJECT KEY
 
 steps:
+# 1. Инсталация на Node.js
 - task: UseNode@1
+  displayName: 'Install Node.js'
   inputs:
     version: $(NODE_VERSION)
-  displayName: 'Install Node.js $(NODE_VERSION)'
 
-- task: SonarQubeCloudPrepare@2
-  displayName: 'Prepare SonarQube Cloud Analysis'
+# 2. ПОДГОТОВКА НА SONARCLOUD (ЗАДЪЛЖИТЕЛНО В НАЧАЛОТО)
+- task: SonarCloudPrepare@3
+  displayName: 'Prepare SonarCloud Analysis'
   inputs:
-    sonarCloudConnection: 'SonarCloudConnection'
+    SonarCloud: 'SonarCloudConnection'
     organization: $(SONAR_ORG)
     scannerMode: 'CLI'
     configMode: 'manual'
-    projectKey: $(SONAR_PROJECT)
+    cliProjectKey: $(SONAR_PROJECT)
     extraProperties: |
       sonar.javascript.lcov.reportPaths=**/coverage/lcov.info
       sonar.sources=.
       sonar.exclusions=**/node_modules/**,**/*.test.js
 
+# 3. ФУНКЦИОНАЛНИ ТЕСТОВЕ: SERVER
 - script: |
     cd server
     npm install
     npm test
   displayName: 'Functional Tests: Server'
 
+# 4. ФУНКЦИОНАЛНИ ТЕСТОВЕ: CLIENT
 - script: |
     cd client
     npm install
@@ -50,44 +54,52 @@ steps:
   env:
     CI: true
 
+# 5. ПУБЛИКУВАНЕ НА РЕЗУЛТАТИ ОТ ТЕСТОВЕТЕ В AZURE
 - task: PublishTestResults@2
+  displayName: 'Publish Test Results'
   condition: succeededOrFailed()
   inputs:
     testResultsFormat: 'JUnit'
     testResultsFiles: '**/test-results/*.xml'
 
+# 6. ИЗПЪЛНЕНИЕ НА SONARCLOUD АНАЛИЗ (СЛЕД ТЕСТОВЕТЕ)
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud Analysis'
 
-- task: SonarQubeCloudAnalyze@2
-  displayName: 'Run SonarQube Cloud Analysis'
-
-- task: SonarQubeCloudPublish@2
+- task: SonarCloudPublish@3
   displayName: 'Publish Quality Gate Result'
   inputs:
     pollingTimeoutSec: '300'
 
+# 7. НЕФУНКЦИОНАЛНИ ТЕСТОВЕ: SECURITY SCAN
 - script: |
     cd server
     npm audit --audit-level=high
-  displayName: 'Security Scan'
+  displayName: 'Security Scan (Server)'
   continueOnError: true 
 
+# 8. BUILD НА КЛИЕНТСКИЯ ПРОЕКТ
 - script: |
     cd client
     npm run build
-  displayName: 'Build client'
+  displayName: 'Build Client'
 
+# 9. СЪЗДАВАНЕ И ПУБЛИКУВАНЕ НА ARTIFACTS
 - task: CopyFiles@2
+  displayName: 'Copy Build to Staging'
   inputs:
     SourceFolder: 'client/build'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
 - task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
+# 10. DOCKER АВТОМАТИЗАЦИЯ (САМО АКО ВСИЧКО ПРЕДИ ТОВА Е УСПЕШНО)
 - task: Docker@2
   displayName: 'Build and Push Docker Image'
   condition: succeeded()
