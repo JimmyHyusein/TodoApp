@@ -18,7 +18,7 @@ const EditTodo = ({todo}) => {
             });
             window.location = "/";
         } catch (error) {
-            console.log(error.message)
+          console.log(error.message)
         }
     }
     return <>
