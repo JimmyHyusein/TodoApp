@@ -11,13 +11,30 @@ pool:
 variables:
   - group: MyVariables
   - name: NODE_VERSION
-    value: '22.x' 
+    value: '22.x'
+  - name: SONAR_ORG
+    value: 'jimmyhyusein'
+  - name: SONAR_PROJECT
+    value: 'JimmyHyusein_TodoApp'
 
 steps:
 - task: NodeTool@0
   inputs:
     versionSpec: $(NODE_VERSION)
-  displayName: 'Install Node.js $(NODE_VERSION)'
+  displayName: 'Install Node.js'
+
+- task: SonarCloudPrepare@3
+  displayName: 'Prepare SonarCloud Analysis'
+  inputs:
+    SonarCloud: 'SonarCloudConnection'
+    organization: $(SONAR_ORG)
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    projectKey: $(SONAR_PROJECT)
+    extraProperties: |
+      sonar.javascript.lcov.reportPaths=**/coverage/lcov.info
+      sonar.sources=.
+      sonar.exclusions=**/node_modules/**,**/*.test.js
 
 - script: |
     cd server
@@ -25,34 +42,39 @@ steps:
     npm test
   displayName: 'Functional Tests: Server'
 
-
 - script: |
     cd client
     npm install
     npm test
   displayName: 'Functional Tests: Client'
-
+  env:
+    CI: true
 
 - task: PublishTestResults@2
   condition: succeededOrFailed()
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: '**/test-results/*.xml' 
-  displayName: 'Publish Functional Test Results'
+    testResultsFiles: '**/test-results/*.xml'
+  displayName: 'Publish Test Results'
 
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud Analysis'
+
+- task: SonarCloudPublish@3
+  displayName: 'Publish Quality Gate Result'
+  inputs:
+    pollingTimeoutSec: '300'
 
 - script: |
     cd server
     npm audit --audit-level=high
-  displayName: 'Non-functional: Security Scan (Server)'
+  displayName: 'Security Scan (Non-functional)'
   continueOnError: true 
-
 
 - script: |
     cd client
     npm run build
   displayName: 'Build client'
-
 
 - task: CopyFiles@2
   inputs:
@@ -70,6 +92,7 @@ steps:
 
 - task: Docker@2
   displayName: 'Build and Push Docker Image'
+  condition: succeeded()
   inputs:
     containerRegistry: 'MyDockerHub'  
     repository: 'nhyusein/todo-app'
